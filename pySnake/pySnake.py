@@ -66,6 +66,8 @@ class PySnakeApp(Frame):
     # run application
     def runApp(self):
         self.snake.moveSnake()
+        if (self.snake.collisionDetected()):
+            return
         self.canvas.after(DELAY, self.runApp)
 
     # key bindings
@@ -96,6 +98,22 @@ class Snake:
             node.moveBlock()
             node.setDirection(direction)
 
+    # check for collisions
+    def collisionDetected(self):
+        # self collision
+        block = self.head
+        while (block.getNextBlock() != None):
+            if (block == self.head):
+                return True
+        # wall collision
+        if (self.head.getX() == MIN_X or
+            self.head.getX() == MAX_X or
+            self.head.getY() == MIN_Y or
+            self.head.getY() == MAX_Y):
+            return True
+        # no collision
+        return False
+
     # only set the head block direction
     def setDirection(self, direction):
         self.head.setDirection(direction)
@@ -110,8 +128,14 @@ class Block:
         self.y = y
         self.id = self.canvas.create_rectangle(x-5, y-5, x+5, y+5, fill=color)
 
-    # function to detect if two blocks have collided
-    def isCollision(self, other):    
+    def getX(self):
+        return self.x
+
+    def getY(self): 
+        return self.y
+
+    # overload eq function to detect if two blocks have collided
+    def __eq__(self, other):    
         return (abs(self.x - other.x) <= 5 and abs(self.y - other.y) <= 5)
 
     # set the block's direction of travel
@@ -142,6 +166,8 @@ class Block:
             xDirection = -10
         elif (self.direction == RIGHT):
             xDirection = 10
+        self.x += xDirection
+        self.y += yDirection
         self.canvas.move(self.id, xDirection, yDirection)
 
 def main():
