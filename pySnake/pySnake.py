@@ -3,11 +3,17 @@
 from Tkinter import *
 import random
 
-# value associated with each direction
-up      = 0
-down    = 1
-left    = 2
-right   = 3
+# direction settings
+UP          = 0
+DOWN        = 1
+LEFT        = 2
+RIGHT       = 3
+
+# timing settings
+DELAY       = 200
+
+# shape settings
+BLOCK_SIZE  = 5
 
 class PySnakeApp(Frame):   
     # PySnakApp class initialization
@@ -55,13 +61,13 @@ class PySnakeApp(Frame):
                 self.blockList.append(Block(self.canvas, x, y, "white"))
 
     def moveUp(self, event):
-        self.snake.setDirection(up)
+        self.snake.setDirection(UP)
     def moveDown(self, event):
-        self.snake.setDirection(down)
+        self.snake.setDirection(DOWN)
     def moveLeft(self, event):
-        self.snake.setDirection(left)
+        self.snake.setDirection(LEFT)
     def moveRight(self, event):
-        self.snake.setDirection(right)
+        self.snake.setDirection(RIGHT)
 
 class Snake:
     def __init__(self, canvas, x, y):
@@ -122,13 +128,13 @@ class Block:
     def moveBlock(self):
         xDirection = 0
         yDirection = 0
-        if (self.direction == up):
+        if (self.direction == UP):
             yDirection = -10
-        elif (self.direction == down):
+        elif (self.direction == DOWN):
             yDirection = 10
-        elif (self.direction == left):
+        elif (self.direction == LEFT):
             xDirection = -10
-        elif (self.direction == right):
+        elif (self.direction == RIGHT):
             xDirection = 10
         self.canvas.move(self.id, xDirection, yDirection)
 
