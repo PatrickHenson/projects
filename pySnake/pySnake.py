@@ -17,15 +17,13 @@ MIN_X       = 0
 MIN_Y       = 0
 MAX_X       = 640
 MAX_Y       = 480
-BLOCK_SIZE  = 5
+
 
 class PySnakeApp(Frame):   
     # PySnakApp class initialization
     def __init__(self, parent):
         self.frame = Frame.__init__(self, parent)
         self.parent = parent
-        self.x = 640
-        self.y = 480
         self.initUI()
         self.pack()
 
@@ -38,7 +36,7 @@ class PySnakeApp(Frame):
         self.canvas = Canvas(self, background="black")
         self.canvas.pack(fill=BOTH, expand=True)
         # initialize snake
-        self.snake = Snake(self.canvas, 20, self.y/2)
+        self.snake = Snake(self.canvas)
         # bind keys
         self.parent.bind('<Up>', self.moveUp)
         self.parent.bind('<Down>', self.moveDown)
@@ -81,9 +79,11 @@ class PySnakeApp(Frame):
         self.snake.setDirection(RIGHT)
 
 class Snake:
-    def __init__(self, canvas, x, y):
+    def __init__(self, canvas):
+        initX = 20
+        initY = (MAX_Y - MIN_Y) / 2
         self.canvas = canvas
-        self.head = Block(canvas, x, y, "red")
+        self.head = Block(canvas, initX, initY, "red")
         self.head.setDirection(3)
 
     # iterate through each linked block, move, and set the next direction
