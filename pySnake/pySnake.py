@@ -12,7 +12,11 @@ RIGHT       = 3
 # timing settings
 DELAY       = 200
 
-# shape settings
+# canvas settings
+MIN_X       = 0
+MIN_Y       = 0
+MAX_X       = 640
+MAX_Y       = 480
 BLOCK_SIZE  = 5
 
 class PySnakeApp(Frame):   
@@ -25,7 +29,6 @@ class PySnakeApp(Frame):
         self.initUI()
         self.pack()
 
-
     # initialize UI objects
     def initUI(self):
         # setup application window
@@ -36,30 +39,38 @@ class PySnakeApp(Frame):
         self.canvas.pack(fill=BOTH, expand=True)
         # initialize snake
         self.snake = Snake(self.canvas, 20, self.y/2)
-        self.snake.moveSnake()
-        # initialize blocks
-        self.numBlocks = 5
-        self.blockList = []
-        self.drawBlocks()
         # bind keys
         self.parent.bind('<Up>', self.moveUp)
         self.parent.bind('<Down>', self.moveDown)
         self.parent.bind('<Left>', self.moveLeft)
         self.parent.bind('<Right>', self.moveRight)
+        # run application
+        self.runApp()
 
-    # draw individual blocks in the main area
-    def drawBlocks(self):
-        minX = 10
-        minY = 10
-        maxX = self.x - 10
-        maxY = self.y - 10        
-        # populate empty block list
-        if (len(self.blockList) != self.numBlocks):
-            while (len(self.blockList) < self.numBlocks):
-                x = random.randint(minX, maxX)
-                y = random.randint(minY, maxY)
-                self.blockList.append(Block(self.canvas, x, y, "white"))
+#        # initialize blocks
+#        self.numBlocks = 5
+#        self.blockList = []
+#        self.drawBlocks()
 
+#    # draw individual blocks in the main area
+#    def drawBlocks(self):
+#        minX = 10
+#        minY = 10
+#        maxX = self.x - 10
+#        maxY = self.y - 10        
+#        # populate empty block list
+#        if (len(self.blockList) != self.numBlocks):
+#            while (len(self.blockList) < self.numBlocks):
+#                x = random.randint(minX, maxX)
+#                y = random.randint(minY, maxY)
+#                self.blockList.append(Block(self.canvas, x, y, "white"))
+
+    # run application
+    def runApp(self):
+        self.snake.moveSnake()
+        self.canvas.after(DELAY, self.runApp)
+
+    # key bindings
     def moveUp(self, event):
         self.snake.setDirection(UP)
     def moveDown(self, event):
@@ -84,12 +95,10 @@ class Snake:
             node = node.getNextBlock()
             node.moveBlock()
             node.setDirection(direction)
-        self.canvas.after(100, self.moveSnake)
 
     # only set the head block direction
     def setDirection(self, direction):
         self.head.setDirection(direction)
-
 
 class Block:
     def __init__(self, canvas, x, y, color):
@@ -101,11 +110,8 @@ class Block:
         self.y = y
         self.id = self.canvas.create_rectangle(x-5, y-5, x+5, y+5, fill=color)
 
-    def __eq__(self, other):
-        return (self.x == other.x and self.y == other.y)
-
     # function to detect if two blocks have collided
-    def collision(self, other):    
+    def isCollision(self, other):    
         return (abs(self.x - other.x) <= 5 and abs(self.y - other.y) <= 5)
 
     # set the block's direction of travel
