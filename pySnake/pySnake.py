@@ -40,10 +40,8 @@ class PySnakeApp(Frame):
         self.canvas.pack(fill=BOTH, expand=True)
         # initialize snake
         self.snake = Snake(self.canvas)
-	self.snake.addBlock()
-	self.snake.addBlock()
-	self.snake.addBlock()
-	self.snake.addBlock()
+	# initialize bites
+	self.bites = Bites(self.canvas)
         # bind keys
         self.parent.bind('<Up>', self.moveUp)
         self.parent.bind('<Down>', self.moveDown)
@@ -52,29 +50,15 @@ class PySnakeApp(Frame):
         # run application
         self.runApp()
 
-#        # initialize blocks
-#        self.numBlocks = 5
-#        self.blockList = []
-#        self.drawBlocks()
-
-#    # draw individual blocks in the main area
-#    def drawBlocks(self):
-#        minX = 10
-#        minY = 10
-#        maxX = self.x - 10
-#        maxY = self.y - 10        
-#        # populate empty block list
-#        if (len(self.blockList) != self.numBlocks):
-#            while (len(self.blockList) < self.numBlocks):
-#                x = random.randint(minX, maxX)
-#                y = random.randint(minY, maxY)
-#                self.blockList.append(Block(self.canvas, x, y, "white"))
-
     # run application
     def runApp(self):
-#        self.snake.addBlock()
+	# move snake
         self.snake.moveSnake()
-        if (self.snake.collisionDetected()):
+	# check if bite eaten by snake head
+	if (self.bites.gotBite(self.snake.getHead())):
+	    self.snake.growSnake()
+	# check for collisions (end game)        
+	elif (self.snake.collisionDetected()):
             return
         self.canvas.after(DELAY, self.runApp)
 
@@ -88,6 +72,7 @@ class PySnakeApp(Frame):
     def moveRight(self, event):
         self.snake.setDirection(RIGHT)
 
+# class defining snake
 class Snake:
     def __init__(self, canvas):
         initX = 20
@@ -96,8 +81,11 @@ class Snake:
         self.head = Block(canvas, initX, initY, "red")
         self.head.setDirection(RIGHT)
 
+    def getHead(self):
+	return self.head
+
     # add block to tail of snake
-    def addBlock(self):
+    def growSnake(self):
 	tail = self.head
 	while (tail.getNextBlock() != None):
     	    tail = tail.getNextBlock()
@@ -142,6 +130,37 @@ class Snake:
     def setDirection(self, direction):
         self.head.setDirection(direction)
 
+# class storing random bites for snake to eat
+class Bites:
+    def __init__(self, canvas):
+	self.canvas = canvas
+	self.count = 5
+	self.bites = []
+	for n in range(0, self.count):
+	    self.addBite()
+
+    # add random bite to list
+    def addBite(self):
+        x = random.randint(MIN_X, MAX_X)
+        y = random.randint(MIN_Y, MAX_Y)
+        self.bites.append(Block(self.canvas, x, y, "white"))
+
+    # check if bite captured
+    def gotBite(self, head):
+	bite = [x for x in self.bites if x == head]
+	if (len(bite) == 1):
+	    bite[0].removeBlock()
+	    self.addBite()
+            return True
+        return False
+
+#	self.bites[:] = [x for x in self.bites if not x == head]
+#	if (len(self.bites) < self.count):
+#	    self.addBite()
+#	    return True
+#	return False
+	
+# class defining blocks used to create snake and bites
 class Block:
     def __init__(self, canvas, x, y, color):
         self.canvas = canvas
@@ -202,6 +221,9 @@ class Block:
 	self.y += shiftY
 	self.setCoordinates(self.x, self.y)        
 	#self.canvas.move(self.id, shiftX, shiftY)
+
+    def removeBlock(self):
+	self.canvas.delete(self.id)
 
 def main():
     root = Tk()
