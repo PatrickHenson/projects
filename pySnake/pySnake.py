@@ -17,7 +17,10 @@ MIN_X       = 0
 MIN_Y       = 0
 MAX_X       = 640
 MAX_Y       = 480
+BLOCK_SIZE  = 5
 
+def DEBUG(message):
+    print message
 
 class PySnakeApp(Frame):   
     # PySnakApp class initialization
@@ -37,6 +40,10 @@ class PySnakeApp(Frame):
         self.canvas.pack(fill=BOTH, expand=True)
         # initialize snake
         self.snake = Snake(self.canvas)
+	self.snake.addBlock()
+	self.snake.addBlock()
+	self.snake.addBlock()
+	self.snake.addBlock()
         # bind keys
         self.parent.bind('<Up>', self.moveUp)
         self.parent.bind('<Down>', self.moveDown)
@@ -65,6 +72,7 @@ class PySnakeApp(Frame):
 
     # run application
     def runApp(self):
+#        self.snake.addBlock()
         self.snake.moveSnake()
         if (self.snake.collisionDetected()):
             return
@@ -86,25 +94,41 @@ class Snake:
         initY = (MAX_Y - MIN_Y) / 2
         self.canvas = canvas
         self.head = Block(canvas, initX, initY, "red")
-        self.head.setDirection(3)
+        self.head.setDirection(RIGHT)
 
-    # iterate through each linked block, move, and set the next direction
+    # add block to tail of snake
+    def addBlock(self):
+	tail = self.head
+	while (tail.getNextBlock() != None):
+    	    tail = tail.getNextBlock()
+	newBlock = Block(self.canvas, tail.getX(), tail.getY(), "red")
+	tail.setNextBlock(newBlock)
+
+    # move each block in snake
     def moveSnake(self):
-        self.head.moveBlock()
-        node = self.head
-        while (node.getNextBlock() != None):
-            direction = node.getDirection()
-            node = node.getNextBlock()
-            node.moveBlock()
-            node.setDirection(direction)
+	# chase head by shifting to prior blocks position
+	b = self.head
+	x = b.getX()
+        y = b.getY()
+	while (b.getNextBlock() != None):
+            n = b.getNextBlock()
+            tmpX = n.getX()
+	    tmpY = n.getY()
+            n.setCoordinates(x, y)
+            x = tmpX
+            y = tmpY
+	    b = n	    
+	# move head in stored direction
+	self.head.moveBlock()
 
     # check for collisions
     def collisionDetected(self):
         # self collision
         block = self.head
         while (block.getNextBlock() != None):
-            if (block == self.head):
-                return True
+	    block = block.getNextBlock()
+            if (block == self.head):       
+		return True
         # wall collision
         if (self.head.getX() == MIN_X or
             self.head.getX() == MAX_X or
@@ -126,7 +150,7 @@ class Block:
         # x,y coordinates for block center
         self.x = x
         self.y = y
-        self.id = self.canvas.create_rectangle(x-5, y-5, x+5, y+5, fill=color)
+        self.id = self.canvas.create_rectangle(x-5,y-5,x+5,y+5,fill=color)
 
     def getX(self):
         return self.x
@@ -153,22 +177,31 @@ class Block:
     # return linked block
     def getNextBlock(self):
         return self.nextBlock
+    
+    # move block to the set coordinates
+    def setCoordinates(self, x, y):
+        # x,y coordinates for block center
+        self.x = x
+        self.y = y
+        self.canvas.coords(self.id,x-5,y-5,x+5,y+5)
 
     # move the block in the appropriate direction
     def moveBlock(self):
-        xDirection = 0
-        yDirection = 0
-        if (self.direction == UP):
-            yDirection = -10
-        elif (self.direction == DOWN):
-            yDirection = 10
-        elif (self.direction == LEFT):
-            xDirection = -10
-        elif (self.direction == RIGHT):
-            xDirection = 10
-        self.x += xDirection
-        self.y += yDirection
-        self.canvas.move(self.id, xDirection, yDirection)
+	d = self.direction
+        shiftX = 0
+        shiftY = 0
+	if (d == UP):
+	    shiftY -= 10
+	elif (d == DOWN):
+	    shiftY += 10
+        elif (d == LEFT):
+            shiftX -= 10
+        elif (d == RIGHT):
+            shiftX += 10
+	self.x += shiftX
+	self.y += shiftY
+	self.setCoordinates(self.x, self.y)        
+	#self.canvas.move(self.id, shiftX, shiftY)
 
 def main():
     root = Tk()
