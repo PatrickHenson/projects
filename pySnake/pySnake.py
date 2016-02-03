@@ -15,7 +15,8 @@ LEFT        = 2
 RIGHT       = 3
 
 # timing settings
-INIT_DELAY  = 200
+INIT_DELAY  = 100 # increase delay to 'build up' speed
+MIN_DELAY   = 100
 SPEED_UP    = 5
 
 # canvas settings
@@ -23,9 +24,9 @@ MIN_X       = 0
 MIN_Y       = 0
 MAX_X       = 640
 MAX_Y       = 480
-TITLE_Y     = 20
 MARGIN      = 15
 BLOCK_SIZE  = 5
+NUM_BLOCKS  = 5
 
 # debug functionality prints string in terminal while application runs
 def DEBUG(message):
@@ -47,8 +48,6 @@ class PySnakeApp(Frame):
         # setup canvas to draw objects
         self.canvas = Canvas(self, background="black")
         self.canvas.pack(fill=BOTH, expand=True)
-        # initialize title bar
-        self.title = Text(self, width=MAX_X, height=TITLE_Y)
         # initialize snake
         self.snake = Snake(self.canvas)
 	    # initialize bites
@@ -70,18 +69,18 @@ class PySnakeApp(Frame):
 	    # check if bite eaten by snake head
         if (self.bites.gotBite(self.snake.getHead())):
             # speed up, add score, grow snake
-            if (self.delay > 0): self.delay -= SPEED_UP
+            if (self.delay > MIN_DELAY): self.delay -= SPEED_UP
             self.score += 10
             self.snake.growSnake()
-            
         # check for collisions (end game)        
         elif (self.snake.collisionDetected()):
-            endText = "YOU LOSE\n SCORE: {}".format(self.score)
+            endText = "YOU LOSE\nSCORE: {}".format(self.score)
             txt = self.canvas.create_text(MAX_X/2, MAX_Y/2)
             self.canvas.itemconfig(txt, font=("Verdana", 20, "bold"))
             self.canvas.itemconfig(txt, fill="red")
             self.canvas.itemconfig(txt, text=endText)
             return
+        # time interval to runApp()
         self.canvas.after(self.delay, self.runApp)
 
     # key event bindings used to control snake movement
@@ -113,7 +112,7 @@ class Snake:
         tail = self.head
         while (tail.getNextBlock() != None):
             tail = tail.getNextBlock()
-        newBlock = Block(self.canvas, tail.getX(), tail.getY(), "red")
+        newBlock = Block(self.canvas, tail.getX(), tail.getY(), "red4")
         tail.setNextBlock(newBlock)
 
     # functions controlling snake movement
@@ -147,10 +146,10 @@ class Snake:
 		# move head in stored direction
 		x = self.head.getX()
 		y = self.head.getY()
-		if (self.direction == UP):		y -= 10
-		elif (self.direction == DOWN):	y += 10
-		elif (self.direction == LEFT):	x -= 10
-		elif (self.direction == RIGHT): x += 10
+		if (self.direction == UP):		y -= BLOCK_SIZE*2
+		elif (self.direction == DOWN):	y += BLOCK_SIZE*2
+		elif (self.direction == LEFT):	x -= BLOCK_SIZE*2
+		elif (self.direction == RIGHT): x += BLOCK_SIZE*2
 		self.head.setCoordinates(x, y)
 
     # check for collisions
@@ -174,21 +173,22 @@ class Snake:
 class Bites:
     def __init__(self, canvas):
 	self.canvas = canvas
-	self.count = 5
 	self.bites = []
-	for n in range(0, self.count):
+	for n in range(0, NUM_BLOCKS):
 	    self.addBite()
 
     # add random bite to list
     def addBite(self):
         minX = MIN_X + MARGIN
-        maxX = (MAX_X - MARGIN) / (BLOCK_SIZE * 2)
-        minY = MIN_Y + MARGIN + TITLE_Y
-        maxY = (MAX_Y - MARGIN) / (BLOCK_SIZE * 2)
+        maxX = MAX_X - MARGIN
+        minY = MIN_Y + MARGIN
+        maxY = MAX_Y - MARGIN
         # require generated point to be multiple of (BLOCK_SIZE * 2)
         # ensures that block will be align with path of snake movement
-        x = random.randint(minX, maxX) * BLOCK_SIZE * 2
-        y = random.randint(minY, maxY) * BLOCK_SIZE * 2
+        x = 1
+        y = 1
+        while (x % 10 != 0): x = random.randint(minX, maxX)
+        while (y % 10 != 0): y = random.randint(minY, maxY)
         self.bites.append(Block(self.canvas, x, y, "white"))
 
     # check for collition with snake head
@@ -226,7 +226,7 @@ class Block:
 
     # overload eq function to detect if two blocks have collided
     def __eq__(self, other):
-        size = BLOCK_SIZE 
+        size = BLOCK_SIZE
         return (abs(self.x - other.x) <= size and abs(self.y - other.y) <= size)
 
     # set linked block
@@ -252,7 +252,7 @@ def main():
     # create fixed size window and launch application
     root = Tk()
     root.resizable(width=FALSE, height=FALSE)
-    root.geometry('{}x{}'.format(MAX_X, (MAX_Y + TITLE_Y)))
+    root.geometry('{}x{}'.format(MAX_X, MAX_Y))
     app = PySnakeApp(root)
     root.mainloop()
 
