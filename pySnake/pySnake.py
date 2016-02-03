@@ -2,6 +2,12 @@
 from Tkinter import *
 import random
 
+# pySnake is a simple version of the classic snake game
+# missing functionality:
+# - show score
+# - 'you lose' message
+# - randomly generated blocks don't check if space occupied by snake or existing block
+
 # direction settings
 UP          = 0
 DOWN        = 1
@@ -9,16 +15,19 @@ LEFT        = 2
 RIGHT       = 3
 
 # timing settings
-DELAY       = 200
+INIT_DELAY  = 200
+SPEED_UP    = 5
 
 # canvas settings
 MIN_X       = 0
 MIN_Y       = 0
 MAX_X       = 640
 MAX_Y       = 480
+TITLE_Y     = 20
+MARGIN      = 15
 BLOCK_SIZE  = 5
 
-# debug function prints string in terminal while application runs
+# debug functionality prints string in terminal while application runs
 def DEBUG(message):
     print message
 
@@ -38,16 +47,20 @@ class PySnakeApp(Frame):
         # setup canvas to draw objects
         self.canvas = Canvas(self, background="black")
         self.canvas.pack(fill=BOTH, expand=True)
+        # initialize title bar
+        self.title = Text(self, width=MAX_X, height=TITLE_Y)
         # initialize snake
         self.snake = Snake(self.canvas)
-	# initialize bites
-	self.bites = Bites(self.canvas)
+	    # initialize bites
+        self.bites = Bites(self.canvas)
         # bind key events to key bindings
         self.parent.bind('<Up>', self.moveUp)
         self.parent.bind('<Down>', self.moveDown)
         self.parent.bind('<Left>', self.moveLeft)
         self.parent.bind('<Right>', self.moveRight)
         # run application
+        self.delay = INIT_DELAY
+        self.score = 0
         self.runApp()
 
     # run pySnake application
@@ -56,11 +69,20 @@ class PySnakeApp(Frame):
         self.snake.moveSnake()
 	    # check if bite eaten by snake head
         if (self.bites.gotBite(self.snake.getHead())):
+            # speed up, add score, grow snake
+            if (self.delay > 0): self.delay -= SPEED_UP
+            self.score += 10
             self.snake.growSnake()
+            
         # check for collisions (end game)        
         elif (self.snake.collisionDetected()):
+            endText = "YOU LOSE\n SCORE: {}".format(self.score)
+            txt = self.canvas.create_text(MAX_X/2, MAX_Y/2)
+            self.canvas.itemconfig(txt, font=("Verdana", 20, "bold"))
+            self.canvas.itemconfig(txt, fill="red")
+            self.canvas.itemconfig(txt, text=endText)
             return
-        self.canvas.after(DELAY, self.runApp)
+        self.canvas.after(self.delay, self.runApp)
 
     # key event bindings used to control snake movement
     def moveUp(self, event):
@@ -159,13 +181,14 @@ class Bites:
 
     # add random bite to list
     def addBite(self):
-        minX = MIN_X + 10
-        maxX = (MAX_X - 10) / 5
-        minY = MIN_Y + 10
-        maxY = (MAX_Y - 10) / 5
-        # require generated point to be multiple of 5
-        x = random.randint(minX, maxX) * 5
-        y = random.randint(minY, maxY) * 5
+        minX = MIN_X + MARGIN
+        maxX = (MAX_X - MARGIN) / (BLOCK_SIZE * 2)
+        minY = MIN_Y + MARGIN + TITLE_Y
+        maxY = (MAX_Y - MARGIN) / (BLOCK_SIZE * 2)
+        # require generated point to be multiple of (BLOCK_SIZE * 2)
+        # ensures that block will be align with path of snake movement
+        x = random.randint(minX, maxX) * BLOCK_SIZE * 2
+        y = random.randint(minY, maxY) * BLOCK_SIZE * 2
         self.bites.append(Block(self.canvas, x, y, "white"))
 
     # check for collition with snake head
@@ -188,10 +211,9 @@ class Block:
         # allow blocks to form linked list to create snake
         self.nextBlock = None
         # block attributes
-        self.size = 5
         self.x = x
         self.y = y
-        size = self.size
+        size = BLOCK_SIZE
         self.id = self.canvas.create_rectangle(x-size,y-size,x+size,y+size,fill=color)
 
 	# return block's current x coordinate
@@ -204,7 +226,7 @@ class Block:
 
     # overload eq function to detect if two blocks have collided
     def __eq__(self, other):
-        size = self.size  
+        size = BLOCK_SIZE 
         return (abs(self.x - other.x) <= size and abs(self.y - other.y) <= size)
 
     # set linked block
@@ -220,16 +242,17 @@ class Block:
         # x,y coordinates for block center
         self.x = x
         self.y = y
-        size = self.size
+        size = BLOCK_SIZE
         self.canvas.coords(self.id,x-size,y-size,x+size,y+size)
 
     def removeBlock(self):
 		self.canvas.delete(self.id)
 
-# main function to launch application
 def main():
+    # create fixed size window and launch application
     root = Tk()
-    root.geometry("640x480+300+300")
+    root.resizable(width=FALSE, height=FALSE)
+    root.geometry('{}x{}'.format(MAX_X, (MAX_Y + TITLE_Y)))
     app = PySnakeApp(root)
     root.mainloop()
 
