@@ -15,9 +15,9 @@ LEFT        = 2
 RIGHT       = 3
 
 # timing settings
-INIT_DELAY  = 100 # increase delay to 'build up' speed
-MIN_DELAY   = 100
-SPEED_UP    = 5
+INIT_DELAY  = 150 # increase delay to 'build up' speed
+MIN_DELAY   = 50
+SPEED_UP    = 2
 
 # canvas settings
 MIN_X       = 0
@@ -57,31 +57,44 @@ class PySnakeApp(Frame):
         self.parent.bind('<Down>', self.moveDown)
         self.parent.bind('<Left>', self.moveLeft)
         self.parent.bind('<Right>', self.moveRight)
+        self.parent.bind('<space>', self.spaceKey)
         # run application
+        self.gameOver = False
         self.delay = INIT_DELAY
         self.score = 0
+        self.nextDirection = RIGHT
         self.runApp()
 
     # run pySnake application
     def runApp(self):
-	    # move snake
-        self.snake.moveSnake()
-	    # check if bite eaten by snake head
-        if (self.bites.gotBite(self.snake.getHead())):
-            # speed up, add score, grow snake
-            if (self.delay > MIN_DELAY): self.delay -= SPEED_UP
-            self.score += 10
-            self.snake.growSnake()
-        # check for collisions (end game)        
-        elif (self.snake.collisionDetected()):
-            endText = "YOU LOSE\nSCORE: {}".format(self.score)
-            txt = self.canvas.create_text(MAX_X/2, MAX_Y/2)
-            self.canvas.itemconfig(txt, font=("Verdana", 20, "bold"))
-            self.canvas.itemconfig(txt, fill="red")
-            self.canvas.itemconfig(txt, text=endText)
-            return
+        # wait for restart
+        if not self.gameOver: 
+    	    # move snake
+            self.snake.moveSnake()
+    	    # check if bite eaten by snake head
+            if (self.bites.gotBite(self.snake.getHead())):
+                # speed up, add score, grow snake
+                if (self.delay > MIN_DELAY): self.delay -= SPEED_UP
+                self.score += 10
+                self.snake.growSnake()
+            # check for collisions (end game)        
+            elif (self.snake.collisionDetected()):
+                self.gameOver = True
+                endText = "YOU LOSE\nSCORE: {}".format(self.score)
+                self.txtId = self.canvas.create_text(MAX_X/2, MAX_Y/2)
+                self.canvas.itemconfig(self.txtId, font=("Verdana", 20, "bold"))
+                self.canvas.itemconfig(self.txtId, fill="red")
+                self.canvas.itemconfig(self.txtId, text=endText)
         # time interval to runApp()
         self.canvas.after(self.delay, self.runApp)
+
+    def restartGame(self):
+        self.gameOver = False
+        self.canvas.delete(self.txtId)
+        self.snake.resetSnake()
+        self.bites.resetBites()
+        self.delay = INIT_DELAY
+        self.score = 0
 
     # key event bindings used to control snake movement
     def moveUp(self, event):
@@ -92,16 +105,19 @@ class PySnakeApp(Frame):
         self.snake.moveLeft()
     def moveRight(self, event):
         self.snake.moveRight()
+    def spaceKey(self, event):
+        if (self.gameOver):
+            self.restartGame()
 
 # class defining snake functionality
 # snake is created using linked list of blocks
 class Snake:
     def __init__(self, canvas):
-        initX = 20
-        initY = (MAX_Y - MIN_Y) / 2
+        self.initX = 20
+        self.initY = (MAX_Y - MIN_Y) / 2
         self.canvas = canvas
         self.direction = RIGHT
-        self.head = Block(canvas, initX, initY, "red")		
+        self.head = Block(self.canvas, self.initX, self.initY, "red")		
 
     # return the head block
     def getHead(self):
@@ -169,6 +185,20 @@ class Snake:
         # no collision
         return False
 
+    # create new snake
+    def resetSnake(self):    
+        block = self.head
+        while (block.getNextBlock() != None):
+            nextBlock = block.getNextBlock()
+            block.setNextBlock(None)                
+            block.removeBlock()                
+            block = nextBlock
+        block.setNextBlock(None)
+        block.removeBlock()
+        self.head.setNextBlock(None)
+        self.head = Block(self.canvas, self.initX, self.initY, "red")
+        self.direction = RIGHT
+
 # class defining bites on map for snake to eat
 class Bites:
     def __init__(self, canvas):
@@ -203,6 +233,13 @@ class Bites:
         # remove block objects from current bite list
         self.bites[:] = [x for x in self.bites if not x == head]
         return detected
+
+    def resetBites(self):
+        for b in self.bites:
+            b.removeBlock()
+        self.bites[:] = []
+        for n in range(0, NUM_BLOCKS):
+            self.addBite()
 	
 # class defining blocks used to create snake and bites
 class Block:
